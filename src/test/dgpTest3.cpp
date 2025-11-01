@@ -148,6 +148,20 @@ int main(int argc, char **argv) {
 
     } else if(string(argv[i])=="-ccp" || string(argv[i])=="-ccPrimal") {
       D._operation = Operation::COMPUTE_CC_PRIMAL;
+    } else if(string(argv[i])=="-ccd" || string(argv[i])=="-ccDual") {
+      D._operation = Operation::COMPUTE_CC_DUAL;
+    } else if(string(argv[i])=="-iso" || string(argv[i])=="-isOriented") {
+      D._operation = Operation::IS_ORIENTED;
+    } else if(string(argv[i])=="-isot" || string(argv[i])=="-isOrientable") {
+      D._operation = Operation::IS_ORIENTABLE;
+    } else if(string(argv[i])=="-or" || string(argv[i])=="-orient") {
+      D._operation = Operation::ORIENT;
+    } else if(string(argv[i])=="-riv" || string(argv[i])=="-removeIsolatedVertices") {
+      D._operation = Operation::REMOVE_ISOLATED_VERTICES;
+    } else if(string(argv[i])=="-ctsv" || string(argv[i])=="-cutThroughSingularVertices") {
+      D._operation = Operation::CUT_THROUGH_SINGULAR_VERTICES;
+    } else if(string(argv[i])=="-ctm" || string(argv[i])=="-convertToManifold") {
+      D._operation = Operation::CONVERT_TO_MANIFOLD;
 
     } else if(string(argv[i])[0]=='-') {
       error("unknown option");
@@ -281,35 +295,148 @@ int main(int argc, char **argv) {
   // PolygonMesh::cutThroughSingularVertices()
   // PolygonMesh::convertToManifold()
 
-  switch(D._operation) {
-  case Operation::COMPUTE_CC_PRIMAL:
-    // perform the operation here
-    break;
-  case Operation::COMPUTE_CC_DUAL:
-    // perform the operation here
-    break;
-  case Operation::IS_ORIENTED:
-    // perform the operation here
-    break;
-  case Operation::IS_ORIENTABLE:
-    // perform the operation here
-    break;
-  case Operation::ORIENT:
-    // perform the operation here
-    break;
-  case Operation::REMOVE_ISOLATED_VERTICES:
-    // perform the operation here
-    break;
-  case Operation::CUT_THROUGH_SINGULAR_VERTICES:
-    // perform the operation here
-    break;
-  case Operation::CONVERT_TO_MANIFOLD:
-    // perform the operation here
-    break;
-  case Operation::NONE:
-  default:
-    break;
+  Node* node;
+  SceneGraphTraversal sgt(wrl);
+  for(int iIfs=0;(node=sgt.next())!=(Node*)0;iIfs++) {
+    Shape* shape = dynamic_cast<Shape*>(node);
+    if(shape==(Shape*)0) continue;
+    IndexedFaceSet* ifs = dynamic_cast<IndexedFaceSet*>(shape->getGeometry());
+    if(ifs==(IndexedFaceSet*)0) continue;
+
+    // Perform the operation on each of the IndexedFaceSet nodes
+    // First I create its PolygonMesh
+    int nVifs = ifs->getNumberOfCoord();
+    vector<int>& coordIndex = ifs->getCoordIndex();
+
+
+    PolygonMesh pMesh(nVifs, coordIndex);
+
+    
+    cout << "OPERATION" << endl;
+    switch(D._operation) {
+    case Operation::COMPUTE_CC_PRIMAL: {
+      vector<int> faceLabel;
+      int nCC = pMesh.computeConnectedComponentsPrimal(faceLabel);
+
+      // Get CC size
+      map<int,int> ccSize;
+      for (size_t i=0; i < faceLabel.size(); i++) {
+          ccSize[faceLabel[i]]++;
+      }
+      cout << endl;
+      cout << " COMPUTE_CC_PRIMAL:" << endl;
+      cout << "    IndexedFaceSet " << iIfs << " | "
+           << " nCC = " << nCC << endl;
+      cout << "      CC sizes: ";
+      for (const auto& pair : ccSize) {
+          cout << "       CC " << pair.first << " size = " << pair.second << "; ";
+      }
+      cout << endl << endl;
+      break;
+    }
+    case Operation::COMPUTE_CC_DUAL: {
+      vector<int> faceLabel;
+      int nCC = pMesh.computeConnectedComponentsDual(faceLabel);
+
+      // Get CC size
+      map<int,int> ccSize;
+      for (size_t i=0; i < faceLabel.size(); i++) {
+          ccSize[faceLabel[i]]++;
+      }
+      cout << endl;
+      cout << " COMPUTE_CC_DUAL:" << endl;
+      cout << "    IndexedFaceSet " << iIfs << " | "
+           << " nCC = " << nCC << endl;
+      cout << "      CC sizes: ";
+      for (const auto& pair : ccSize) {
+          cout << "       CC " << pair.first << " size = " << pair.second << "; ";
+      }
+      cout << endl << endl;
+      break;
+    }
+    case Operation::IS_ORIENTED: {
+      bool isOriented = pMesh.isOriented();
+      cout << endl;
+      cout << " IS_ORIENTED:" << endl;
+      cout << "    IndexedFaceSet " << iIfs << " | "
+            << " isOriented = " << tv(isOriented) << endl << endl;
+      break;
+    }
+    case Operation::IS_ORIENTABLE: {
+      bool isOrientable = pMesh.isOrientable();
+      cout << endl;
+      cout << " IS_ORIENTABLE:" << endl;
+      cout << "    IndexedFaceSet " << iIfs << " | "
+            << " isOrientable = " << tv(isOrientable) << endl << endl;
+      break;
+    }
+    case Operation::ORIENT: {
+      vector<int> ccIndex;
+      vector<bool> invertFace;
+      pMesh.orient(ccIndex, invertFace);
+      if (ccIndex.size() == 0) {
+          cout << endl;
+          cout << " ORIENT:" << endl;
+          cout << "    IndexedFaceSet " << iIfs << " is already oriented or not orientable." << endl << endl;
+          break;
+      }
+      cout << endl;
+      cout << " ORIENT:" << endl;
+      cout << "    IndexedFaceSet " << iIfs << " possible orientation:" << endl;
+      cout << "      CC index: " << endl;
+      for (size_t i = 0; i < ccIndex.size(); i++) {
+          cout << "       Face " << i << " CC " << ccIndex[i] << "; ";
+          if (invertFace[i])
+            cout << " should be inverted." << endl;
+          else
+            cout << " should NOT be inverted." << endl;
+      }
+      cout << endl << endl;
+      break;
+    }
+    case Operation::REMOVE_ISOLATED_VERTICES: {
+      vector<int> coordMap;
+      vector<int> coordIndexOut;
+      bool result = pMesh.removeIsolatedVertices(coordMap, coordIndexOut);
+      cout << endl;
+      cout << " REMOVE_ISOLATED_VERTICES:" << endl;
+      if (!result) {
+          cout << "    IndexedFaceSet " << iIfs << " had no isolated vertices." << endl << endl;
+          break;
+      }
+      cout << "    IndexedFaceSet " << iIfs << " had " << nVifs - coordMap.size() << " isolated vertices." << endl << endl;
+      break;
+    }
+    case Operation::CUT_THROUGH_SINGULAR_VERTICES: {
+      vector<int> vIndexMap;
+      vector<int> coordIndexOut;
+      pMesh.cutThroughSingularVertices(vIndexMap, coordIndexOut);
+      cout << endl;
+      cout << " CUT_THROUGH_SINGULAR_VERTICES:" << endl;
+      cout << "    Mapping of new vertices:" << endl;
+      for (size_t i = 0; i < vIndexMap.size(); i++) {
+          cout << "       Old Vertex " << vIndexMap[i] << " -> New Vertex " << i << endl << endl;
+      }
+      break;
+    }
+    case Operation::CONVERT_TO_MANIFOLD: {
+      vector<int> vIndexMap;
+      vector<int> coordIndexOut;
+      pMesh.convertToManifold(vIndexMap, coordIndexOut);
+      cout << endl;
+      cout << " CONVERT_TO_MANIFOLD:" << endl;
+      cout << "    Mapping of new vertices:" << endl;
+      for (size_t i = 0; i < vIndexMap.size(); i++) {
+          cout << "       Old Vertex " << vIndexMap[i] << " -> New Vertex " << i << endl << endl;
+      }
+      break;
+    }
+    case Operation::NONE:
+    default:
+      break;
+    }
   }
+
 
   if(D._debug) cout << "  } processing" << endl;
   

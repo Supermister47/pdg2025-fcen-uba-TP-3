@@ -42,6 +42,8 @@
 
 #include "wrl/Node.hpp"
 #include "wrl/IndexedFaceSet.hpp"
+#include <stdint.h>
+
 
 class LoaderStl : public Loader {
 

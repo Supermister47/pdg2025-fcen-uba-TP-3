@@ -58,6 +58,9 @@
 #include "io/LoaderPly.hpp"
 #include "io/SaverPly.hpp"
 
+
+
+
 int GuiMainWindow::_timerInterval = 20;
 
 //////////////////////////////////////////////////////////////////////
@@ -151,6 +154,8 @@ GuiMainWindow::GuiMainWindow():
   _bdryRight(5),
   _toolsWidth(300)
 {
+
+  setlocale(LC_ALL, "C");
 
   setWindowIcon(QIcon("qt.icns"));
   setWindowTitle(QString("DGP2025-A3 | Student : %1").arg(STUDENT_NAME));

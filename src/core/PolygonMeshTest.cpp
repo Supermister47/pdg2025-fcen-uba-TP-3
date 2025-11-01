@@ -150,6 +150,8 @@ PolygonMeshTest::PolygonMeshTest
         _ostr << indent << "        nE_other    = " << nE_other    << endl;
         _ostr << indent << "        isRegular   = " << pMesh.isRegular() << endl;
         _ostr << indent << "        hasBoundary = " << pMesh.hasBoundary() << endl;
+        _ostr << indent << "        isOriented  = " << pMesh.isOriented() << endl;
+        _ostr << indent << "        isOrientable  = " << pMesh.isOrientable() << endl;
 
         _ostr << indent << "      } PolygonMesh" << endl;
         _ostr << indent << "    } IndexedFaceSet" << endl;

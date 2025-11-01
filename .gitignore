@@ -3,5 +3,14 @@ bin
 build
 build-*
 *.pro.user
+*.pro
+.vscode
+data-PM
 *~
-
+CMakeFiles/
+cmake_install.cmake
+Makefile
+ttt.wrl
+dgpTest3
+*.a
+CMakeCache.txt
